@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Piano Simulator – QWERTY Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #07070e;
+      --surface: #0f0f18;
+      --surface2: #161621;
+      --border: rgba(255,255,255,.055);
+      --accent: #7c5cfc;
+      --accent2: #a78bfa;
+      --gold: #f5c842;
+      --gold2: #e89a20;
+      --green: #10d97a;
+      --red: #f54265;
+      --text: #ece6ff;
+      --muted: #5e5878;
+      --wk: #f0edff;
+      --wk-active: #c4b5fd;
+      --bk: #171435;
+      --bk-active: #7c5cfc;
+      --gp: rgba(124,92,252,.55);
+      --gg: rgba(245,200,66,.65);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(150px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(124,92,252,.11) 0%, transparent 70%);
+      top: -250px; left: -200px;
+    }
+    body::after {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(167,139,250,.09) 0%, transparent 70%);
+      bottom: 0; right: -120px;
+    }
+
+    /* ── Header ── */
+    header {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 38px 20px 18px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      background: rgba(124,92,252,.14);
+      border: 1px solid rgba(124,92,252,.28);
+      border-radius: 100px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: clamp(1.9rem,4.5vw,3rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, var(--accent2) 50%, var(--accent) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p { margin-top: 8px; font-size: 13.5px; color: var(--muted); }
+
+    /* ── Controls ── */
+    .controls {
+      position: relative; z-index: 1;
+      display: flex; flex-wrap: wrap;
+      align-items: center; justify-content: center;
+      gap: 10px; margin: 18px 0;
+      padding: 0 20px;
+    }
+    .ctrl {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 9px 15px;
+    }
+    .ctrl label {
+      font-size: 10.5px; font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase; letter-spacing: .9px;
+      white-space: nowrap;
+    }
+    .ctrl select {
+      background: var(--surface2);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      padding: 4px 10px;
+      cursor: pointer; outline: none;
+    }
+    .ctrl select:hover { border-color: var(--accent); }
+    input[type=range] {
+      -webkit-appearance: none;
+      height: 4px;
+      background: var(--surface2);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 4px; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--accent); cursor: pointer;
+      box-shadow: 0 0 8px var(--gp);
+    }
+    #volRange  { width: 88px; }
+    #revRange  { width: 80px; }
+    #speedRange{ width: 72px; }
+    .oct-badge {
+      font-size: 13px; font-weight: 700;
+      background: rgba(124,92,252,.18);
+      border: 1px solid rgba(124,92,252,.28);
+      border-radius: 8px; padding: 4px 12px;
+      color: var(--accent2); min-width: 58px; text-align: center;
+    }
+    .icon-btn {
+      background: none; border: none;
+      color: var(--accent2); font-size: 15px;
+      cursor: pointer; transition: color .2s;
+    }
+    .icon-btn:hover { color: #fff; }
+
+    /* ── Section label ── */
+    .sec-label {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 920px;
+      padding: 0 22px 11px;
+      font-size: 10.5px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── Song Library ── */
+    .song-lib {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 940px;
+      padding: 0 20px;
+      margin-bottom: 22px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) var(--surface);
+    }
+    .song-lib::-webkit-scrollbar { height: 4px; }
+    .song-lib::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+
+    .song-grid {
+      display: flex; gap: 13px;
+      padding-bottom: 6px;
+      min-width: max-content;
+    }
+
+    .song-card {
+      width: 195px; flex-shrink: 0;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 16px 14px;
+      transition: transform .2s, border-color .2s, box-shadow .25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .song-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.1); }
+    .song-card.playing {
+      border-color: rgba(124,92,252,.45);
+      box-shadow: 0 0 24px rgba(124,92,252,.14);
+    }
+    .song-card .s-bar {
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 3px; border-radius: 16px 16px 0 0;
+    }
+    .song-card .s-emoji { font-size: 26px; display: block; margin-bottom: 7px; }
+    .song-card .s-title { font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.3; margin-bottom: 2px; }
+    .song-card .s-composer { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .song-card .s-diff { font-size: 11px; margin-bottom: 11px; }
+    .song-card .s-btns { display: flex; gap: 6px; }
+    .sbtn {
+      flex: 1; padding: 6px 0;
+      border-radius: 8px; border: 1px solid;
+      font-family: 'Outfit', sans-serif;
+      font-size: 10.5px; font-weight: 700;
+      cursor: pointer; transition: all .18s;
+      letter-spacing: .4px;
+    }
+    .sbtn.auto {
+      background: rgba(124,92,252,.13);
+      border-color: rgba(124,92,252,.28);
+      color: var(--accent2);
+    }
+    .sbtn.auto:hover { background: rgba(124,92,252,.28); color: #fff; }
+    .sbtn.guide {
+      background: rgba(245,200,66,.12);
+      border-color: rgba(245,200,66,.28);
+      color: var(--gold);
+    }
+    .sbtn.guide:hover { background: rgba(245,200,66,.28); color: #fff; }
+
+    /* ── Guide Banner ── */
+    .guide-banner {
+      position: relative; z-index: 1;
+      width: min(900px, 96vw);
+      background: var(--surface);
+      border: 1px solid rgba(124,92,252,.28);
+      border-radius: 18px;
+      padding: 16px 22px;
+      margin-bottom: 18px;
+      display: none;
+      box-shadow: 0 0 40px rgba(124,92,252,.1);
+      animation: bannerIn .28s ease;
+    }
+    .guide-banner.visible { display: block; }
+    @keyframes bannerIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .gb-top {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 13px;
+    }
+    .gb-info { display: flex; align-items: center; gap: 10px; }
+    .gb-emoji { font-size: 22px; }
+    .gb-title { font-size: 13.5px; font-weight: 700; }
+    .gb-mode {
+      font-size: 9.5px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 6px; margin-top: 3px; display: inline-block;
+    }
+    .gb-mode.auto { background: rgba(124,92,252,.2); color: var(--accent2); }
+    .gb-mode.guide { background: rgba(245,200,66,.18); color: var(--gold); }
+
+    .gb-ctrls { display: flex; align-items: center; gap: 10px; }
+    .gb-speed { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+    #speedVal { font-size: 11px; font-weight: 700; color: var(--accent2); min-width: 28px; }
+    .stop-btn {
+      padding: 6px 14px;
+      background: rgba(245,66,101,.13);
+      border: 1px solid rgba(245,66,101,.28);
+      border-radius: 8px; color: var(--red);
+      font-family: 'Outfit', sans-serif;
+      font-size: 11.5px; font-weight: 700;
+      cursor: pointer; transition: all .18s;
+    }
+    .stop-btn:hover { background: rgba(245,66,101,.28); color: #fff; }
+
+    /* Banner body */
+    .gb-body { display: flex; align-items: center; gap: 22px; }
+    .gb-key-wrap { flex-shrink: 0; display: flex; align-items: center; gap: 10px; }
+    .gb-key-lbl {
+      font-size: 11px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    }
+    .gb-key-badge { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .gb-key-box {
+      width: 54px; height: 54px;
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 900;
+      color: #1a0e00;
+      box-shadow: 0 0 22px var(--gg);
+      animation: kpulse 1.1s ease-in-out infinite;
+    }
+    @keyframes kpulse {
+      0%,100% { box-shadow: 0 0 16px var(--gg); }
+      50% { box-shadow: 0 0 32px rgba(245,200,66,.9); }
+    }
+    .gb-note-name { font-size: 12.5px; font-weight: 700; color: var(--gold); }
+    .gb-progress { flex: 1; }
+    .gb-prog-top { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .prog-bar { height: 5px; background: var(--surface2); border-radius: 5px; overflow: hidden; }
+    .prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 5px; transition: width .3s; }
+    .gb-hint { margin-top: 7px; font-size: 11px; color: var(--muted); font-style: italic; }
+
+    /* ── Visualizer ── */
+    #viz {
+      position: relative; z-index: 1;
+      width: min(900px, 96vw); height: 58px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 18px; overflow: hidden;
+    }
+
+    /* ── Piano ── */
+    .piano-wrap {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      margin-bottom: 36px;
+      max-width: 100vw; padding: 0 16px;
+      overflow-x: auto;
+    }
+    .piano-body {
+      background: linear-gradient(185deg, #1c1840 0%, #0b0a1e 100%);
+      border: 2px solid rgba(124,92,252,.18);
+      border-radius: 18px 18px 22px 22px;
+      padding: 22px 22px 26px;
+      box-shadow:
+        0 38px 78px rgba(0,0,0,.72),
+        0 0 0 1px rgba(255,255,255,.035) inset,
+        0 0 55px rgba(124,92,252,.06);
+      position: relative;
+    }
+    .piano-body::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20px; right: 20px; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(124,92,252,.38), transparent);
+      border-radius: 100px;
+    }
+    .keys { display: flex; position: relative; user-select: none; }
+
+    /* White keys */
+    .key {
+      position: relative;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end;
+      width: 52px; height: 188px;
+      background: linear-gradient(180deg, var(--wk) 0%, #ddd8ff 100%);
+      border: 1px solid rgba(0,0,0,.17);
+      border-radius: 0 0 10px 10px;
+      cursor: pointer;
+      transition: background .07s, transform .07s, box-shadow .07s;
+      box-shadow: 0 6px 14px rgba(0,0,0,.33), 0 2px 0 rgba(0,0,0,.28) inset;
+      margin-right: 2px; padding-bottom: 10px; gap: 3px;
+    }
+    .key:last-child { margin-right: 0; }
+    .key.active {
+      background: linear-gradient(180deg, var(--wk-active) 0%, #a78bfa 100%);
+      box-shadow: 0 2px 5px rgba(0,0,0,.3), 0 0 26px rgba(124,92,252,.48);
+      transform: translateY(2px);
+    }
+    .key.guide-target {
+      background: linear-gradient(180deg, #ffed7a 0%, #f5a52a 100%) !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,.25), 0 0 28px var(--gg) !important;
+    }
+    .key.ok-flash {
+      background: linear-gradient(180deg, #80ffbe 0%, var(--green) 100%) !important;
+      box-shadow: 0 0 28px rgba(16,217,122,.55) !important;
+    }
+    .key .nlbl { font-size: 9.5px; font-weight: 700; color: rgba(25,15,60,.6); letter-spacing: .2px; }
+    .key .klbl {
+      font-size: 9px; font-weight: 700;
+      color: rgba(25,15,60,.45);
+      background: rgba(124,92,252,.1);
+      border: 1px solid rgba(124,92,252,.18);
+      border-radius: 4px; padding: 1px 4px;
+    }
+    .key.active .nlbl, .key.active .klbl { color: rgba(50,20,110,.85); }
+    .key.guide-target .nlbl, .key.guide-target .klbl { color: rgba(80,35,0,.75) !important; }
+
+    /* Black keys */
+    .key.black {
+      width: 34px; height: 120px;
+      background: linear-gradient(180deg, #231e4a 0%, var(--bk) 100%);
+      border: 1px solid rgba(255,255,255,.035);
+      border-radius: 0 0 7px 7px;
+      position: absolute; top: 0; z-index: 2;
+      box-shadow: 0 7px 18px rgba(0,0,0,.76), 0 2px 0 rgba(255,255,255,.03) inset;
+      padding-bottom: 7px;
+    }
+    .key.black .nlbl { color: rgba(160,140,240,.5); font-size: 8px; }
+    .key.black .klbl { color: rgba(160,140,240,.4); font-size: 8px; background: rgba(124,92,252,.07); border-color: rgba(124,92,252,.15); }
+    .key.black.active {
+      background: linear-gradient(180deg, var(--bk-active) 0%, #4228c4 100%);
+      box-shadow: 0 2px 10px rgba(0,0,0,.5), 0 0 20px rgba(124,92,252,.65);
+      transform: translateY(2px);
+    }
+    .key.black.guide-target {
+      background: linear-gradient(180deg, var(--gold) 0%, var(--gold2) 100%) !important;
+      box-shadow: 0 4px 10px rgba(0,0,0,.4), 0 0 20px var(--gg) !important;
+    }
+    .key.black.ok-flash {
+      background: linear-gradient(180deg, #80ffbe 0%, var(--green) 100%) !important;
+    }
+    .key.black.guide-target .nlbl, .key.black.guide-target .klbl { color: rgba(80,35,0,.9) !important; }
+    .key.black.active .nlbl, .key.black.active .klbl { color: rgba(255,255,255,.8); }
+
+    /* Wrong shake */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-4px); }
+      40% { transform: translateX(4px); }
+      60% { transform: translateX(-3px); }
+      80% { transform: translateX(3px); }
+    }
+    .shake { animation: shake .28s ease; }
+
+    /* Ripple */
+    .ripple {
+      position: absolute; border-radius: 50%;
+      background: rgba(124,92,252,.28);
+      transform: scale(0);
+      animation: rout .5s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes rout { to { transform: scale(4); opacity: 0; } }
+
+    /* ── Legend ── */
+    .legend {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(195px,1fr));
+      gap: 12px; max-width: 900px; width: 100%;
+      padding: 0 20px 48px;
+    }
+    .leg-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px 15px;
+    }
+    .leg-card h3 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent2); margin-bottom: 9px; }
+    .leg-rows { display: flex; flex-direction: column; gap: 4px; }
+    .leg-row { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted); }
+    .kk {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 21px; height: 19px; padding: 0 5px;
+      background: var(--surface2); border: 1px solid rgba(255,255,255,.09);
+      border-bottom: 2px solid rgba(255,255,255,.13);
+      border-radius: 5px; font-size: 10px; font-weight: 800;
+      color: var(--accent2); font-family: monospace;
+    }
+    .leg-row .arr { opacity: .35; }
+    .leg-row .nn { color: var(--text); font-weight: 600; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 100px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">🎹 QWERTY Piano</div>
+  <h1>Piano Simulator</h1>
+  <p>Toca · Aprende canciones · Sonido de piano clásico</p>
+</header>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="ctrl">
+    <label>Instrumento</label>
+    <select id="waveSelect">
+      <option value="piano" selected>🎹 Piano Clásico</option>
+      <option value="sine">Sine – Suave</option>
+      <option value="triangle">Triangle – Cálido</option>
+      <option value="sawtooth">Sawtooth – Brillante</option>
+      <option value="square">Square – Retro</option>
+    </select>
+  </div>
+  <div class="ctrl">
+    <label>Volumen</label>
+    <input type="range" id="volRange" min="0" max="1" step="0.01" value="0.6"/>
+  </div>
+  <div class="ctrl">
+    <label>Reverb</label>
+    <input type="range" id="revRange" min="0" max="1" step="0.01" value="0.45"/>
+  </div>
+  <div class="ctrl">
+    <label>Octava</label>
+    <button class="icon-btn" id="octDown">◀</button>
+    <span class="oct-badge" id="octDisp">Oct 4</span>
+    <button class="icon-btn" id="octUp">▶</button>
+  </div>
+</div>
+
+<!-- Songs -->
+<div class="sec-label">🎵 Canciones</div>
+<div class="song-lib">
+  <div class="song-grid" id="songGrid"></div>
+</div>
+
+<!-- Guide banner -->
+<div class="guide-banner" id="guideBanner">
+  <div class="gb-top">
+    <div class="gb-info">
+      <span class="gb-emoji" id="gbEmoji">🎵</span>
+      <div>
+        <div class="gb-title" id="gbTitle">–</div>
+        <span class="gb-mode auto" id="gbMode">Auto</span>
+      </div>
+    </div>
+    <div class="gb-ctrls">
+      <div class="gb-speed">
+        <span>Velocidad</span>
+        <input type="range" id="speedRange" min="0.4" max="2.0" step="0.05" value="1.0"/>
+        <span id="speedVal">1.0×</span>
+      </div>
+      <button class="stop-btn" id="stopBtn">■ Stop</button>
+    </div>
+  </div>
+  <div class="gb-body">
+    <div class="gb-key-wrap">
+      <span class="gb-key-lbl" id="gbLbl">Presiona</span>
+      <div class="gb-key-badge">
+        <div class="gb-key-box" id="gbKeyBox">?</div>
+        <div class="gb-note-name" id="gbNoteName">–</div>
+      </div>
+    </div>
+    <div class="gb-progress">
+      <div class="gb-prog-top">
+        <span id="gbProgText">Nota 0 / 0</span>
+        <span id="gbProgPct">0%</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      <div class="gb-hint" id="gbHint"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Visualizer -->
+<canvas id="viz"></canvas>
+
+<!-- Piano -->
+<div class="piano-wrap">
+  <div class="piano-body">
+    <div class="keys" id="pianoKeys"></div>
+  </div>
+</div>
+
+<div class="sec-label" style="max-width:920px;width:100%">⌨️ Mapa de Teclas</div>
+<div class="legend" id="legend"></div>
+
+<script>
+(() => {
+/* ══════════════════════════════════════════════════
+   KEY MAP
+══════════════════════════════════════════════════ */
+const KEY_MAP = [
+  { kb:'a', st: 0, bk:false, lbl:'C'  },
+  { kb:'w', st: 1, bk:true,  lbl:'C#' },
+  { kb:'s', st: 2, bk:false, lbl:'D'  },
+  { kb:'e', st: 3, bk:true,  lbl:'D#' },
+  { kb:'d', st: 4, bk:false, lbl:'E'  },
+  { kb:'f', st: 5, bk:false, lbl:'F'  },
+  { kb:'t', st: 6, bk:true,  lbl:'F#' },
+  { kb:'g', st: 7, bk:false, lbl:'G'  },
+  { kb:'y', st: 8, bk:true,  lbl:'G#' },
+  { kb:'h', st: 9, bk:false, lbl:'A'  },
+  { kb:'u', st:10, bk:true,  lbl:'A#' },
+  { kb:'j', st:11, bk:false, lbl:'B'  },
+  { kb:'k', st:12, bk:false, lbl:'C'  },
+  { kb:'o', st:13, bk:true,  lbl:'C#' },
+  { kb:'l', st:14, bk:false, lbl:'D'  },
+  { kb:'p', st:15, bk:true,  lbl:'D#' },
+  { kb:';', st:16, bk:false, lbl:'E'  },
+  { kb:"'", st:17, bk:false, lbl:'F'  },
+  { kb:'z', st:18, bk:true,  lbl:'F#' },
+  { kb:'x', st:19, bk:false, lbl:'G'  },
+  { kb:'c', st:20, bk:true,  lbl:'G#' },
+  { kb:'v', st:21, bk:false, lbl:'A'  },
+  { kb:'b', st:22, bk:true,  lbl:'A#' },
+  { kb:'n', st:23, bk:false, lbl:'B'  },
+  { kb:'m', st:24, bk:false, lbl:'C'  },
+];
+const kbST  = {}; KEY_MAP.forEach(k => kbST[k.kb]  = k.st);
+const kbLbl = {}; KEY_MAP.forEach(k => kbLbl[k.kb] = k.lbl);
+
+/* ══════════════════════════════════════════════════
+   SONGS
+══════════════════════════════════════════════════ */
+const N = (kb, dur) => ({ kb, dur });
+const R = dur => ({ kb:null, dur });
+
+const SONGS = [
+  {
+    id:'elise', emoji:'🌹', composer:'L. van Beethoven', diff:3,
+    title:'Für Elise',
+    bar:'linear-gradient(90deg,#f59e0b,#f97316)',
+    notes:[
+      N(';',210),N('p',210),N(';',210),N('p',210),N(';',210),
+      N('j',210),N('l',210),N('k',210),N('h',420),R(210),
+      N('a',210),N('d',210),N('h',210),N('j',420),R(210),
+      N('d',210),N('y',210),N('j',210),N('k',420),R(210),
+      N(';',210),N('p',210),N(';',210),N('p',210),N(';',210),
+      N('j',210),N('l',210),N('k',210),N('h',420),R(210),
+      N('a',210),N('d',210),N('h',210),N('j',420),R(210),
+      N('d',210),N('k',210),N('j',210),N('h',950),
+    ]
+  },
+  {
+    id:'twinkle', emoji:'⭐', composer:'Traditional', diff:1,
+    title:'Twinkle Twinkle Little Star',
+    bar:'linear-gradient(90deg,#7c5cfc,#a78bfa)',
+    notes:[
+      N('a',370),N('a',370),N('g',370),N('g',370),N('h',370),N('h',370),N('g',740),
+      N('f',370),N('f',370),N('d',370),N('d',370),N('s',370),N('s',370),N('a',740),
+      N('g',370),N('g',370),N('f',370),N('f',370),N('d',370),N('d',370),N('s',740),
+      N('g',370),N('g',370),N('f',370),N('f',370),N('d',370),N('d',370),N('s',740),
+      N('a',370),N('a',370),N('g',370),N('g',370),N('h',370),N('h',370),N('g',740),
+      N('f',370),N('f',370),N('d',370),N('d',370),N('s',370),N('s',370),N('a',1000),
+    ]
+  },
+  {
+    id:'ode', emoji:'🎼', composer:'L. van Beethoven', diff:1,
+    title:'Ode to Joy',
+    bar:'linear-gradient(90deg,#3b82f6,#38bdf8)',
+    notes:[
+      N('d',370),N('d',370),N('f',370),N('g',370),
+      N('g',370),N('f',370),N('d',370),N('s',370),
+      N('a',370),N('a',370),N('s',370),N('d',370),
+      N('d',555),N('s',185),N('s',740),
+      N('d',370),N('d',370),N('f',370),N('g',370),
+      N('g',370),N('f',370),N('d',370),N('s',370),
+      N('a',370),N('a',370),N('s',370),N('d',370),
+      N('s',555),N('a',185),N('a',1000),
+    ]
+  },
+  {
+    id:'birthday', emoji:'🎂', composer:'M. & P. Hill', diff:2,
+    title:'Happy Birthday',
+    bar:'linear-gradient(90deg,#ec4899,#f97316)',
+    notes:[
+      N('g',190),N('g',190),N('h',380),N('g',380),N('k',380),N('j',760),R(190),
+      N('g',190),N('g',190),N('h',380),N('g',380),N('l',380),N('k',760),R(190),
+      N('g',190),N('g',190),N('x',380),N(';',380),N('k',380),N('j',380),N('h',760),R(190),
+      N("'",190),N("'",190),N(';',380),N('k',380),N('l',380),N('k',1200),
+    ]
+  },
+  {
+    id:'mary', emoji:'🐑', composer:'Traditional', diff:1,
+    title:'Mary Had a Little Lamb',
+    bar:'linear-gradient(90deg,#10b981,#34d399)',
+    notes:[
+      N('d',340),N('s',340),N('a',340),N('s',340),
+      N('d',340),N('d',340),N('d',680),
+      N('s',340),N('s',340),N('s',680),
+      N('d',340),N('g',340),N('g',680),
+      N('d',340),N('s',340),N('a',340),N('s',340),
+      N('d',340),N('d',340),N('d',340),N('d',340),
+      N('s',340),N('s',340),N('d',340),N('s',340),
+      N('a',1050),
+    ]
+  },
+  {
+    id:'jingle', emoji:'🛷', composer:'J. Pierpont', diff:2,
+    title:'Jingle Bells',
+    bar:'linear-gradient(90deg,#ef4444,#f97316)',
+    notes:[
+      N('d',270),N('d',270),N('d',540),
+      N('d',270),N('d',270),N('d',540),
+      N('d',270),N('g',270),N('a',270),N('s',270),N('d',1100),
+      N('f',270),N('f',270),N('f',270),N('f',270),
+      N('f',270),N('d',270),N('d',270),N('d',270),
+      N('s',270),N('s',270),N('d',540),N('s',540),N('g',1100),
+      N('d',270),N('d',270),N('d',540),
+      N('d',270),N('d',270),N('d',540),
+      N('d',270),N('g',270),N('a',270),N('s',270),N('d',1100),
+      N('f',270),N('f',270),N('f',270),N('f',270),
+      N('f',270),N('d',270),N('d',270),N('d',270),
+      N('g',270),N('g',270),N('f',270),N('s',270),N('a',1500),
+    ]
+  },
+];
+
+/* ══════════════════════════════════════════════════
+   AUDIO ENGINE
+══════════════════════════════════════════════════ */
+let actx = null, masterGain, dryGain, revGain, convolver, analyser;
+const active = {};
+let baseOct = 4;
+let volume = 0.6, revAmt = 0.45, waveType = 'piano';
+
+function getCtx() {
+  if (!actx) {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    setupAudio();
+  }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+
+function setupAudio() {
+  masterGain = actx.createGain();
+  masterGain.gain.value = volume;
+  masterGain.connect(actx.destination);
+
+  dryGain = actx.createGain();
+  dryGain.gain.value = 1 - revAmt;
+  dryGain.connect(masterGain);
+
+  revGain = actx.createGain();
+  revGain.gain.value = revAmt;
+  revGain.connect(masterGain);
+
+  convolver = actx.createConvolver();
+  convolver.connect(revGain);
+  buildImpulse(2.5, 3.5);
+
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 512;
+  masterGain.connect(analyser);
+}
+
+function buildImpulse(dur, decay) {
+  if (!actx) return;
+  const sr = actx.sampleRate, len = ~~(sr * dur);
+  const buf = actx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++)
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+  }
+  if (convolver) convolver.buffer = buf;
+}
+
+function stFreq(st, fixedOct = null) {
+  const oct = fixedOct !== null ? fixedOct : baseOct;
+  return 440 * Math.pow(2, (60 + (oct - 4) * 12 + st - 69) / 12);
+}
+
+/* ── Classic Piano Synthesis ── */
+function playPiano(kb, st, fixedOct = null) {
+  if (active[kb]) return;
+  const ctx = getCtx();
+  const freq = stFreq(st, fixedOct);
+  const now = ctx.currentTime;
+
+  // Harmonic series with piano-style inharmonicity
+  const harmonics = [
+    { m:1,       t:'triangle', g:0.50 },
+    { m:2.001,   t:'sine',     g:0.26 },
+    { m:3.002,   t:'sine',     g:0.13 },
+    { m:4.006,   t:'sine',     g:0.06 },
+    { m:5.014,   t:'sine',     g:0.025 },
+    { m:6.028,   t:'sine',     g:0.01 },
+  ];
+
+  // Lowpass – sweeps from bright to dark (piano string behavior)
+  const flt = ctx.createBiquadFilter();
+  flt.type = 'lowpass';
+  flt.frequency.setValueAtTime(Math.min(15000, freq * 5.5 + 2200), now);
+  flt.frequency.exponentialRampToValueAtTime(Math.max(180, freq * 1.1 + 280), now + 3.5);
+  flt.Q.value = 0.25;
+
+  const oscs = [];
+  harmonics.forEach(h => {
+    const osc = ctx.createOscillator();
+    const gn  = ctx.createGain();
+    osc.type = h.t;
+    osc.frequency.value = freq * h.m;
+    gn.gain.value = h.g;
+    osc.connect(gn); gn.connect(flt);
+    osc.start(now);
+    oscs.push(osc);
+  });
+
+  // Hammer "thunk" burst
+  const thump = ctx.createOscillator();
+  const tgn   = ctx.createGain();
+  thump.type = 'sawtooth';
+  thump.frequency.value = freq * 7;
+  tgn.gain.setValueAtTime(0.04, now);
+  tgn.gain.exponentialRampToValueAtTime(0.0001, now + 0.055);
+  thump.connect(tgn); tgn.connect(flt);
+  thump.start(now); thump.stop(now + 0.08);
+  oscs.push(thump);
+
+  // ADSR envelope
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(0, now);
+  env.gain.linearRampToValueAtTime(1.0,  now + 0.004);  // attack
+  env.gain.exponentialRampToValueAtTime(0.55, now + 0.1); // initial decay
+  env.gain.exponentialRampToValueAtTime(0.32, now + 1.0); // sustain slope
+
+  flt.connect(env);
+  env.connect(dryGain);
+  env.connect(convolver);
+
+  active[kb] = {
+    stop() {
+      delete active[kb];
+      const t = ctx.currentTime;
+      try {
+        env.gain.cancelScheduledValues(t);
+        env.gain.setValueAtTime(env.gain.value, t);
+        env.gain.exponentialRampToValueAtTime(0.001, t + 0.48);
+        oscs.forEach(o => { try { o.stop(t + 0.52); } catch(e){} });
+      } catch(e) {}
+    }
+  };
+}
+
+/* ── Wave Synthesis ── */
+function playWave(kb, st, fixedOct = null) {
+  if (active[kb]) return;
+  const ctx = getCtx();
+  const freq = stFreq(st, fixedOct);
+  const now = ctx.currentTime;
+
+  const osc  = ctx.createOscillator();
+  const shim = ctx.createOscillator();
+  const og   = ctx.createGain();
+  const sg   = ctx.createGain();
+
+  osc.type = waveType;
+  osc.frequency.value = freq;
+  shim.type = 'sine';
+  shim.frequency.value = freq * 2.006;
+  sg.gain.value = 0.07;
+
+  og.gain.setValueAtTime(0, now);
+  og.gain.linearRampToValueAtTime(0.65, now + 0.01);
+
+  osc.connect(og); shim.connect(sg);
+  og.connect(dryGain); og.connect(convolver);
+  sg.connect(dryGain); sg.connect(convolver);
+  osc.start(); shim.start();
+
+  active[kb] = {
+    stop() {
+      delete active[kb];
+      const t = ctx.currentTime;
+      try {
+        og.gain.setValueAtTime(og.gain.value, t);
+        og.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+        osc.stop(t + 0.36); shim.stop(t + 0.36);
+      } catch(e) {}
+    }
+  };
+}
+
+function playNote(kb, st, fixedOct = null) {
+  if (waveType === 'piano') playPiano(kb, st, fixedOct);
+  else                      playWave(kb, st, fixedOct);
+}
+function stopNote(kb) { if (active[kb]) active[kb].stop(); }
+
+/* ══════════════════════════════════════════════════
+   PIANO KEYBOARD DOM
+══════════════════════════════════════════════════ */
+const keysEl = document.getElementById('pianoKeys');
+const keyEls = {};
+const wkeys = KEY_MAP.filter(k => !k.bk);
+const bkeys = KEY_MAP.filter(k =>  k.bk);
+const KW = 52, KG = 2, BW = 34;
+
+keysEl.style.width = `${wkeys.length * (KW + KG)}px`;
+
+wkeys.forEach(k => {
+  const el = document.createElement('div');
+  el.className = 'key';
+  el.dataset.kb = k.kb;
+  const o = k.st < 12 ? baseOct : baseOct + 1;
+  el.innerHTML = `<span class="nlbl">${k.lbl}${o}</span><span class="klbl">${k.kb.toUpperCase()}</span>`;
+  el.addEventListener('mousedown', () => { playNote(k.kb, k.st); el.classList.add('active'); ripple(el); });
+  el.addEventListener('mouseup',   () => { stopNote(k.kb); el.classList.remove('active'); });
+  el.addEventListener('mouseleave',() => { stopNote(k.kb); el.classList.remove('active'); });
+  keysEl.appendChild(el);
+  keyEls[k.kb] = el;
+});
+
+bkeys.forEach(k => {
+  const pi = wkeys.findIndex(w => w.st === k.st - 1);
+  if (pi === -1) return;
+  const left = (pi + 1) * (KW + KG) - (BW / 2) - 1;
+  const el = document.createElement('div');
+  el.className = 'key black';
+  el.dataset.kb = k.kb;
+  el.style.left = `${left}px`;
+  const disp = k.kb === "'" ? "'" : k.kb.toUpperCase();
+  el.innerHTML = `<span class="nlbl">${k.lbl}</span><span class="klbl">${disp}</span>`;
+  el.addEventListener('mousedown', () => { playNote(k.kb, k.st); el.classList.add('active'); ripple(el); });
+  el.addEventListener('mouseup',   () => { stopNote(k.kb); el.classList.remove('active'); });
+  el.addEventListener('mouseleave',() => { stopNote(k.kb); el.classList.remove('active'); });
+  keysEl.appendChild(el);
+  keyEls[k.kb] = el;
+});
+
+function updateLabels() {
+  keysEl.querySelectorAll('.key:not(.black)').forEach((el, i) => {
+    const wk = wkeys[i]; if (!wk) return;
+    const nl = el.querySelector('.nlbl');
+    if (nl) nl.textContent = wk.lbl + (wk.st < 12 ? baseOct : baseOct + 1);
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   SONG / GUIDE SYSTEM
+══════════════════════════════════════════════════ */
+const SS = {
+  song: null, idx: 0, playing: false,
+  mode: 'auto', speed: 1.0,
+  tid: null, guideKb: null,
+};
+
+// Build song cards
+const songGrid = document.getElementById('songGrid');
+SONGS.forEach(song => {
+  const card = document.createElement('div');
+  card.className = 'song-card';
+  card.id = `sc-${song.id}`;
+  const stars = '⭐'.repeat(song.diff) + '☆'.repeat(Math.max(0, 3 - song.diff));
+  card.innerHTML = `
+    <div class="s-bar" style="background:${song.bar}"></div>
+    <span class="s-emoji">${song.emoji}</span>
+    <div class="s-title">${song.title}</div>
+    <div class="s-composer">${song.composer}</div>
+    <div class="s-diff">${stars}</div>
+    <div class="s-btns">
+      <button class="sbtn auto" data-id="${song.id}" data-mode="auto">▶ Auto</button>
+      <button class="sbtn guide" data-id="${song.id}" data-mode="guide">🎹 Guía</button>
+    </div>`;
+  songGrid.appendChild(card);
+});
+
+songGrid.addEventListener('click', e => {
+  const btn = e.target.closest('.sbtn');
+  if (!btn) return;
+  const song = SONGS.find(s => s.id === btn.dataset.id);
+  if (song) startSong(song, btn.dataset.mode);
+});
+
+// Banner elements
+const banner    = document.getElementById('guideBanner');
+const gbEmoji   = document.getElementById('gbEmoji');
+const gbTitle   = document.getElementById('gbTitle');
+const gbMode    = document.getElementById('gbMode');
+const gbLbl     = document.getElementById('gbLbl');
+const gbKeyBox  = document.getElementById('gbKeyBox');
+const gbNoteName= document.getElementById('gbNoteName');
+const progFill  = document.getElementById('progFill');
+const gbProgTxt = document.getElementById('gbProgText');
+const gbProgPct = document.getElementById('gbProgPct');
+const gbHint    = document.getElementById('gbHint');
+
+document.getElementById('stopBtn').addEventListener('click', stopSong);
+document.getElementById('speedRange').addEventListener('input', e => {
+  SS.speed = parseFloat(e.target.value);
+  document.getElementById('speedVal').textContent = SS.speed.toFixed(1) + '×';
+});
+
+function startSong(song, mode) {
+  stopSong();
+  SS.song = song; SS.idx = 0; SS.playing = true; SS.mode = mode;
+
+  gbEmoji.textContent = song.emoji;
+  gbTitle.textContent = song.title;
+  gbMode.textContent  = mode === 'auto' ? 'Auto-Play' : 'Modo Guía';
+  gbMode.className    = `gb-mode ${mode}`;
+  gbLbl.textContent   = mode === 'auto' ? 'Tocando' : 'Presiona';
+  gbHint.textContent  = mode === 'guide'
+    ? '✨ Presiona la tecla dorada para avanzar — ¡puedes equivocarte!'
+    : '👁 Mira cómo se toca la melodía y aprende';
+  banner.classList.add('visible');
+
+  document.querySelectorAll('.song-card').forEach(c => c.classList.remove('playing'));
+  const card = document.getElementById(`sc-${song.id}`);
+  if (card) card.classList.add('playing');
+
+  if (mode === 'auto') autoStep();
+  else guideStep();
+}
+
+function stopSong() {
+  clearTimeout(SS.tid);
+  SS.playing = false;
+  clearGuideTarget();
+  Object.keys(active).forEach(stopNote);
+  Object.keys(keyEls).forEach(kb => keyEls[kb].classList.remove('active','ok-flash','guide-target'));
+  banner.classList.remove('visible');
+  document.querySelectorAll('.song-card').forEach(c => c.classList.remove('playing'));
+  SS.song = null;
+}
+
+function clearGuideTarget() {
+  if (SS.guideKb) {
+    const el = keyEls[SS.guideKb];
+    if (el) el.classList.remove('guide-target');
+    SS.guideKb = null;
+  }
+}
+
+/* ── Auto-play ── */
+function autoStep() {
+  if (!SS.playing || SS.mode !== 'auto') return;
+  const { song, speed } = SS;
+  const idx = SS.idx;
+  if (idx >= song.notes.length) { setTimeout(() => { if (SS.playing) stopSong(); }, 600); return; }
+
+  const note = song.notes[idx];
+  const dur  = note.dur / speed;
+  updateProgress(idx, song.notes.length, note);
+
+  if (note.kb) {
+    playNote(note.kb, kbST[note.kb], 4);
+    const el = keyEls[note.kb];
+    if (el) { el.classList.add('active'); ripple(el); }
+
+    SS.tid = setTimeout(() => {
+      if (!SS.playing) return;
+      stopNote(note.kb);
+      if (el) el.classList.remove('active');
+      SS.idx++;
+      autoStep();
+    }, dur);
+  } else {
+    SS.tid = setTimeout(() => {
+      if (!SS.playing) return;
+      SS.idx++;
+      autoStep();
+    }, dur);
+  }
+}
+
+/* ── Guide mode ── */
+function guideStep() {
+  if (!SS.playing || SS.mode !== 'guide') return;
+  const { song } = SS;
+  const idx = SS.idx;
+
+  if (idx >= song.notes.length) {
+    gbKeyBox.textContent   = '✓';
+    gbNoteName.textContent = '¡Terminado!';
+    updateProgress(song.notes.length, song.notes.length, null);
+    setTimeout(() => { if (SS.playing) stopSong(); }, 1200);
+    return;
+  }
+
+  const note = song.notes[idx];
+  if (!note.kb) {
+    SS.idx++;
+    SS.tid = setTimeout(guideStep, note.dur / SS.speed);
+    return;
+  }
+
+  clearGuideTarget();
+  const el = keyEls[note.kb];
+  if (el) el.classList.add('guide-target');
+  SS.guideKb = note.kb;
+  updateProgress(idx, song.notes.length, note);
+}
+
+function onGuideKey(kb) {
+  if (!SS.playing || SS.mode !== 'guide') return false;
+  const { song, speed } = SS;
+  const idx  = SS.idx;
+  const note = song.notes[idx];
+  if (!note || !note.kb) return false;
+
+  if (kb === note.kb) {
+    // ✓ Correct
+    clearGuideTarget();
+    const el = keyEls[kb];
+    if (el) { el.classList.add('ok-flash', 'active'); ripple(el); }
+    playNote(kb, kbST[kb], 4);
+
+    SS.idx++;
+    SS.tid = setTimeout(() => {
+      stopNote(kb);
+      if (el) { el.classList.remove('ok-flash', 'active'); }
+      guideStep();
+    }, note.dur / speed);
+    return true;
+  } else {
+    // ✗ Wrong – shake guide target
+    const guideEl = keyEls[note.kb];
+    if (guideEl) {
+      guideEl.classList.add('shake');
+      guideEl.addEventListener('animationend', () => guideEl.classList.remove('shake'), { once: true });
+    }
+    return false;
+  }
+}
+
+function updateProgress(idx, total, note) {
+  const pct = total > 0 ? Math.round((idx / total) * 100) : 100;
+  progFill.style.width    = pct + '%';
+  gbProgTxt.textContent   = `Nota ${Math.min(idx + 1, total)} / ${total}`;
+  gbProgPct.textContent   = pct + '%';
+  if (!note || !note.kb) {
+    gbKeyBox.textContent   = '…';
+    gbNoteName.textContent = 'pausa';
+  } else {
+    const d = note.kb === "'" ? "'" : note.kb.toUpperCase();
+    gbKeyBox.textContent   = d;
+    gbNoteName.textContent = kbLbl[note.kb] || '?';
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   KEYBOARD EVENTS
+══════════════════════════════════════════════════ */
+// e.code → kb mapping (physical key position, layout-independent)
+const CODE_MAP = {
+  'KeyA':'a',  'KeyW':'w',  'KeyS':'s',  'KeyE':'e',  'KeyD':'d',
+  'KeyF':'f',  'KeyT':'t',  'KeyG':'g',  'KeyY':'y',  'KeyH':'h',
+  'KeyU':'u',  'KeyJ':'j',  'KeyK':'k',  'KeyO':'o',  'KeyL':'l',
+  'KeyP':'p',  'Semicolon':';', 'Quote':"'", 'KeyZ':'z', 'KeyX':'x',
+  'KeyC':'c',  'KeyV':'v',  'KeyB':'b',  'KeyN':'n',  'KeyM':'m',
+};
+const held = new Set();
+
+document.addEventListener('keydown', e => {
+  if (e.repeat) return;
+  const kb = CODE_MAP[e.code];           // physical position, layout-independent
+  if (!kb) return;
+  const kd = KEY_MAP.find(k => k.kb === kb);
+  if (!kd) return;
+  e.preventDefault();
+
+  if (SS.playing && SS.mode === 'guide') {
+    if (!onGuideKey(kb)) {
+      // Wrong key: play for feedback but don't advance
+      held.add(kb);
+      playNote(kb, kd.st);
+      const el = keyEls[kb];
+      if (el) el.classList.add('active');
+    }
+  } else {
+    held.add(kb);
+    playNote(kb, kd.st);
+    const el = keyEls[kb];
+    if (el) { el.classList.add('active'); ripple(el); }
+  }
+});
+
+document.addEventListener('keyup', e => {
+  const kb = CODE_MAP[e.code];
+  if (!kb) return;
+  held.delete(kb);
+  const el = keyEls[kb];
+  // Don't stop notes being managed by guide system
+  if (!(SS.playing && SS.mode === 'guide' && el?.classList.contains('ok-flash'))) {
+    stopNote(kb);
+    if (el && !el.classList.contains('ok-flash')) el.classList.remove('active');
+  }
+});
+
+/* ══════════════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════════════ */
+document.getElementById('waveSelect').addEventListener('change', e => { waveType = e.target.value; });
+document.getElementById('volRange').addEventListener('input', e => {
+  volume = parseFloat(e.target.value);
+  if (masterGain) masterGain.gain.value = volume;
+});
+document.getElementById('revRange').addEventListener('input', e => {
+  revAmt = parseFloat(e.target.value);
+  if (dryGain) dryGain.gain.value = 1 - revAmt;
+  if (revGain) revGain.gain.value = revAmt;
+});
+document.getElementById('octDown').addEventListener('click', () => {
+  baseOct = Math.max(1, baseOct - 1);
+  document.getElementById('octDisp').textContent = `Oct ${baseOct}`;
+  updateLabels();
+});
+document.getElementById('octUp').addEventListener('click', () => {
+  baseOct = Math.min(7, baseOct + 1);
+  document.getElementById('octDisp').textContent = `Oct ${baseOct}`;
+  updateLabels();
+});
+
+/* ══════════════════════════════════════════════════
+   VISUALIZER
+══════════════════════════════════════════════════ */
+const canvas = document.getElementById('viz');
+const cx     = canvas.getContext('2d');
+let hue = 260;
+const vizData = new Uint8Array(256);
+
+function drawViz() {
+  requestAnimationFrame(drawViz);
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  if (canvas.width !== W) canvas.width = W;
+  if (canvas.height !== H) canvas.height = H;
+
+  cx.fillStyle = 'rgba(15,15,24,0.45)';
+  cx.fillRect(0, 0, W, H);
+
+  if (!analyser) {
+    cx.beginPath();
+    for (let x = 0; x <= W; x++) {
+      const y = H / 2 + Math.sin((x / W) * Math.PI * 5 + Date.now() / 1500) * 5;
+      x === 0 ? cx.moveTo(x, y) : cx.lineTo(x, y);
+    }
+    cx.strokeStyle = 'rgba(124,92,252,.18)';
+    cx.lineWidth = 2; cx.stroke();
+    return;
+  }
+
+  analyser.getByteFrequencyData(vizData);
+  hue = (hue + 0.35) % 360;
+  const bw = W / vizData.length;
+  for (let i = 0; i < vizData.length; i++) {
+    const v = vizData[i] / 255;
+    const bh = v * H * 1.25;
+    const g = cx.createLinearGradient(0, H - bh, 0, H);
+    g.addColorStop(0, `hsla(${hue + i * 0.7},76%,68%,0.92)`);
+    g.addColorStop(1, `hsla(${hue + i * 0.7 + 28},55%,38%,0.12)`);
+    cx.fillStyle = g;
+    cx.fillRect(i * bw, H - bh, bw - 1, bh);
+  }
+}
+drawViz();
+
+/* ══════════════════════════════════════════════════
+   TOUCH
+══════════════════════════════════════════════════ */
+keysEl.addEventListener('touchstart', e => {
+  e.preventDefault();
+  [...e.changedTouches].forEach(t => {
+    const el = document.elementFromPoint(t.clientX, t.clientY)?.closest('.key');
+    if (!el) return;
+    const kb = el.dataset.kb;
+    const kd = KEY_MAP.find(k => k.kb === kb); if (!kd) return;
+    playNote(kb, kd.st); el.classList.add('active');
+  });
+}, { passive: false });
+keysEl.addEventListener('touchend', e => {
+  e.preventDefault();
+  [...e.changedTouches].forEach(t => {
+    const el = document.elementFromPoint(t.clientX, t.clientY)?.closest('.key');
+    if (!el) return;
+    stopNote(el.dataset.kb); el.classList.remove('active');
+  });
+}, { passive: false });
+
+/* ══════════════════════════════════════════════════
+   RIPPLE
+══════════════════════════════════════════════════ */
+function ripple(el) {
+  const r = document.createElement('div');
+  r.className = 'ripple';
+  const s = Math.max(el.offsetWidth, el.offsetHeight);
+  r.style.cssText = `width:${s}px;height:${s}px;left:${(el.offsetWidth-s)/2}px;top:${(el.offsetHeight-s)/2}px`;
+  el.appendChild(r);
+  r.addEventListener('animationend', () => r.remove());
+}
+
+/* ══════════════════════════════════════════════════
+   LEGEND
+══════════════════════════════════════════════════ */
+const legendEl = document.getElementById('legend');
+[
+  { title:'⬜ Teclas Blancas', items: KEY_MAP.filter(k => !k.bk) },
+  { title:'⬛ Teclas Negras',  items: KEY_MAP.filter(k =>  k.bk) },
+].forEach(group => {
+  const card = document.createElement('div');
+  card.className = 'leg-card';
+  card.innerHTML = `<h3>${group.title}</h3><div class="leg-rows"></div>`;
+  const rows = card.querySelector('.leg-rows');
+  group.items.forEach(k => {
+    const oct  = k.st < 12 ? 4 : 5;
+    const disp = k.kb === "'" ? "'" : k.kb.toUpperCase();
+    const r = document.createElement('div');
+    r.className = 'leg-row';
+    r.innerHTML = `<span class="kk">${disp}</span><span class="arr">→</span><span class="nn">${k.lbl}${oct}</span>`;
+    rows.appendChild(r);
+  });
+  legendEl.appendChild(card);
+});
+
+})();
+</script>
+</body>
+</html>
